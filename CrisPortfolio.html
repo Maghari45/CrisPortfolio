@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAFTED BY CRIS | Website Designer | Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000000;
+            --accent: #ff00ff;
+            --muted: #0a0a0a;
+        }
+
+        /* Global Reset */
+        *, *::before, *::after { cursor: none !important; }
+        body {
+            font-family: 'Instrument Sans', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Fixed Layers */
+        #three-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+
+        .glass-nav {
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #scroll-line {
+            position: fixed; top: 80px; left: 0; height: 2px;
+            background: var(--accent); width: 0%; z-index: 101;
+            box-shadow: 0 0 10px var(--accent);
+            transition: width 0.1s ease-out;
+        }
+
+        /* Masterpiece Carousel Pinned Navigation */
+        .marquee-section-container { position: relative; width: 100%; }
+        .marquee-row-outer { width: 100%; overflow-x: hidden; padding: 10px 0; }
+        .marquee-row-inner { display: flex; width: max-content; gap: 30px; }
+        .marquee-left { animation: scrollLeft 400s linear infinite; }
+        .marquee-right { animation: scrollRight 400s linear infinite; }
+        @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes scrollRight { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+        .marquee-section-container:hover .marquee-row-inner { animation-play-state: paused; }
+
+        .row-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 60;
+            width: 55px; height: 55px; background: rgba(0, 0, 0, 0.85); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: white; transition: all 0.3s ease; backdrop-filter: blur(10px); opacity: 0;
+        }
+        .marquee-section-container:hover .row-nav-btn { opacity: 1; }
+        .row-nav-btn:hover { background: var(--accent); color: black; border-color: var(--accent); box-shadow: 0 0 25px var(--accent); }
+        .btn-prev { left: 20px; }
+        .btn-next { right: 20px; }
+        @media (min-width: 768px) {
+            .btn-prev { left: 40px; }
+            .btn-next { right: 40px; }
+        }
+
+        .featured-card { width: 280px; padding: 15px; border-radius: 20px; background: #080808; border: 1px solid #1a1a1a; flex-shrink: 0; transition: all 0.4s ease; }
+        @media (min-width: 768px) { .featured-card { width: 320px; } }
+        .featured-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+
+        /* Upgraded Table Design with Numbers */
+        .archive-table-header { display: grid; grid-template-cols: 50px 140px 1fr; padding: 20px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid #1a1a1a; }
+        .archive-row { display: grid; grid-template-cols: 50px 140px 1fr; padding: 15px 20px; border-bottom: 1px solid #111; transition: 0.3s ease; align-items: center; border-left: 2px solid transparent; }
+        .archive-row:hover { background: rgba(255, 0, 255, 0.05); border-left: 2px solid var(--accent); }
+        #vault-list { overscroll-behavior: contain; }
+        #vault-list::-webkit-scrollbar { width: 4px; }
+        #vault-list::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .vault-btn { 
+            padding: 8px 18px; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: uppercase; 
+            border: 1px solid #222; color: #71717a; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        @media (min-width: 640px) { .vault-btn { padding: 10px 24px; font-size: 11px; } }
+        .vault-btn:hover:not(.active) { border-color: var(--accent); color: white; background: rgba(255, 0, 255, 0.1); }
+        .vault-btn.active { background: var(--accent); color: white !important; border-color: var(--accent); box-shadow: 0 0 20px var(--accent); transform: scale(1.05); }
+
+        /* Professional Toolbox Design */
+        .tool-card {
+            background: #080808; border: 1px solid #111; padding: 35px; border-radius: 24px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;
+        }
+        @media (min-width: 768px) { .tool-card { padding: 35px; } }
+        .tool-card:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .tool-tag {
+            font-size: 9px; font-weight: 800; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase;
+            padding: 4px 12px; border: 1px solid rgba(255,0,255,0.2); border-radius: 99px; width: fit-content; margin-bottom: 25px;
+        }
+
+        /* IDE Terminal Layout for Experience - RESPONSIVE FIX */
+        .ide-container {
+            background: #050505; border: 1px solid #1a1a1a; border-radius: 16px; position: relative; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); width: 100%; max-width: 100%;
+        }
+        .ide-header {
+            background: #0a0a0a; padding: 12px 20px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px;
+        }
+        .ide-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+        .ide-body { padding: 25px; position: relative; }
+        .ide-body::before { content: ''; position: absolute; left: 25px; top: 25px; bottom: 25px; width: 1px; background: #1a1a1a; }
+        .ide-item { position: relative; padding-left: 30px; margin-bottom: 40px; }
+        .ide-item:last-child { margin-bottom: 0; }
+        .ide-marker { position: absolute; left: -4.5px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        
+        @media (min-width: 768px) {
+            .ide-body { padding: 50px; }
+            .ide-body::before { left: 50px; top: 50px; bottom: 50px; }
+            .ide-item { padding-left: 50px; margin-bottom: 60px; }
+        }
+        
+        .syntax-keyword { color: #ff7b72; font-family: monospace; }
+        .syntax-string { color: #a5d6ff; font-family: monospace; }
+        .syntax-comment { color: #8b949e; font-family: monospace; }
+
+        /* Still Learning Animation */
+        .tech-icon { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #080808; border: 1px solid #111; border-radius: 20px; transition: 0.5s; animation: waveFloat 3s ease-in-out infinite; animation-delay: calc(var(--i) * 0.2s); }
+        @media (min-width: 640px) { .tech-icon { padding: 30px; } }
+        @keyframes waveFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @media (min-width: 768px) { @keyframes waveFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } } }
+
+        /* Industry Image Nodes - Brightened Overlay */
+        .industry-node { 
+            border: 1px solid #111; background: #080808; border-radius: 16px; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(20px); text-align: center; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; color: #aaa; 
+            overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; min-height: 120px;
+        }
+        @media (min-width: 768px) { .industry-node { min-height: 160px; } }
+        .industry-node.visible { opacity: 1; transform: translateY(0); }
+        .industry-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.6; transition: 0.7s; } 
+        .industry-node:hover .industry-img { opacity: 0.9; transform: scale(1.1); }
+        .industry-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); }
+        .industry-text { position: relative; z-index: 10; color: #fff; font-weight: 900; }
+
+        /* Typing & Animations */
+        .typing-cursor::after { content: "|"; animation: blink 0.8s infinite; color: var(--accent); }
+        @keyframes blink { 50% { opacity: 0; } }
+        .fade-up { opacity: 0; transform: translateY(50px) scale(0.95); transition: all 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .fade-up.visible { opacity: 1; transform: translateY(0) scale(1); }
+
+        /* Website Logo Animation */
+        @keyframes logoContinuous {
+            0%, 100% { box-shadow: 0 0 10px var(--accent); transform: scale(1) rotate(0deg); }
+            50% { box-shadow: 0 0 25px var(--accent), 0 0 40px rgba(255, 0, 255, 0.5); transform: scale(1.1) rotate(5deg); }
+        }
+        .logo-anim { animation: logoContinuous 3s ease-in-out infinite; }
+
+        /* Neon Text Animation */
+        @keyframes neonTextPulse {
+            0%, 100% {
+                color: #fff;
+                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--accent), 0 0 40px var(--accent), 0 0 80px var(--accent);
+            }
+            50% {
+                color: #ffccff;
+                text-shadow: 0 0 2px #fff, 0 0 5px #fff, 0 0 10px var(--accent), 0 0 20px var(--accent), 0 0 40px var(--accent);
+            }
+        }
+        .neon-text-anim { animation: neonTextPulse 2s ease-in-out infinite; }
+
+        /* Spotlight Letter Animation Refined */
+        .spotlight-branding-container { position: relative; width: 100%; text-align: center; overflow: hidden; padding: 40px 0; border-top: 1px solid #111; cursor: default; }
+        @media (min-width: 768px) { .spotlight-branding-container { padding: 60px 0; } }
+        .spotlight-text { font-size: 8vw; font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; display: inline-block; word-spacing: 10px; margin: 0; transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); color: rgba(255, 255, 255, 0.05); }
+        @media (min-width: 768px) { .spotlight-text { font-size: 6.5vw; word-spacing: 15px; } }
+        .spotlight-text:hover { transform: scale(1.02); }
+        .spot-char { 
+            display: inline-block; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            color: rgba(255, 255, 255, 0.05); -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+        }
+        .spotlight-text:hover .spot-char { 
+            color: #fff; -webkit-text-stroke: 0px transparent; 
+            text-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent); transform: translateY(-5px); 
+        }
+        .spot-space { display: inline-block; width: 2vw; }
+
+        /* Custom 3D Cursor - Pointed Exactly */
+        #custom-cursor {
+            position: fixed; top: 0; left: 0; width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+            pointer-events: none; z-index: 99999; transition: transform 0.05s linear;
+        }
+        #cursor-follower {
+            position: fixed; top: 0; left: 0; width: 30px; height: 30px; pointer-events: none; z-index: 99998;
+            transition: transform 0.15s cubic-bezier(0.1, 1, 0.1, 1);
+            display: flex; align-items: center; justify-content: center;
+            perspective: 500px;
+        }
+        .cursor-box {
+            width: 100%; height: 100%; border: 1px solid rgba(255, 0, 255, 0.5);
+            position: relative; transform-style: preserve-3d; animation: cursorBoxSpin 4s linear infinite;
+        }
+        @keyframes cursorBoxSpin {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+        }
+
+        /* Fixed Actions - Guaranteed Clickable */
+        .fixed-actions { position: fixed; bottom: 20px; right: 20px; z-index: 50000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        @media (min-width: 768px) { .fixed-actions { bottom: 30px; right: 30px; gap: 15px; } }
+        .action-btn { width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; cursor: none; }
+        @media (min-width: 768px) { .action-btn { width: 55px; height: 55px; } }
+        .btn-call { background: #22c55e; color: white; box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3); }
+        .btn-up { background: white; color: black; opacity: 0; pointer-events: none; transform: translateY(20px); }
+        .btn-up.visible { opacity: 1; pointer-events: auto; transform: translateY(0); box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2); }
+        .action-btn:hover { transform: scale(1.1) rotate(-5deg); }
+
+        .map-frame { filter: invert(0.9) hue-rotate(180deg) brightness(1.2) contrast(1.1); width: 100%; height: 100%; border: none; background: #000; }
+        .radar-container { height: 350px; width: 100%; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; }
+        @media (min-width: 768px) { .radar-container { height: 500px; padding: 50px; } }
+        .capability-anim { transform: scale(0.85); opacity: 0; transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .capability-anim.visible { transform: scale(1); opacity: 1; }
+
+        select option { background-color: #050505; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="custom-cursor"></div>
+<div id="cursor-follower"><div class="cursor-box"></div></div>
+<div id="scroll-line"></div>
+<canvas id="three-canvas"></canvas>
+
+<nav class="fixed top-0 w-full z-[100] glass-nav">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-8 h-20 flex justify-between items-center">
+        <div class="flex items-center gap-3 sm:gap-5">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-pink-500 flex items-center justify-center rounded-sm text-white font-black text-lg sm:text-xl italic logo-anim">C</div>
+            <div>
+                <p class="text-[8px] sm:text-[10px] font-bold tracking-[0.4em] uppercase text-white neon-text-anim">Crafted By Cris</p>
+                <p class="text-[6px] sm:text-[8px] text-zinc-500 uppercase font-bold tracking-widest">Portfolio</p>
+            </div>
+        </div>
+        
+        <div class="hidden lg:flex items-center gap-10">
+            <a href="#about" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">My Story</a>
+            <a href="#education" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">Academic</a>
+            <a href="#experience" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">Experience</a>
+            <a href="#services" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">Services</a>
+            <a href="#featured" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">Work</a>
+            <a href="#vault" class="text-[10px] font-bold uppercase tracking-widest hover:text-pink-500 transition-all">Archive</a>
+        </div>
+
+        <div class="flex items-center gap-4 sm:gap-6">
+            <a href="https://drive.google.com/file/d/1ziH3WsSfkgrbWzLO5mXuYtezFh9ygTM5/view?usp=drive_link" target="_blank" class="px-3 sm:px-5 py-2 border border-zinc-800 text-[8px] sm:text-[10px] font-bold uppercase tracking-widest hover:border-white transition-all">Download CV</a>
+            <a href="#contact" class="hidden sm:block px-6 py-2.5 bg-pink-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all shadow-lg">Start Project</a>
+        </div>
+    </div>
+</nav>
+
+<div class="fixed-actions">
+    <button id="back-to-top" class="action-btn btn-up shadow-xl">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+    </button>
+    <a href="tel:09770738429" class="action-btn btn-call shadow-xl">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79a15.1 15.1 0 006.59 6.59l2.2-2.2a1 1 0 011.11-.27c1.12.45 2.33.69 3.58.69a1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.24 2.46.69 3.58a1 1 0 01-.27 1.11z"/></svg>
+    </a>
+</div>
+
+<main>
+    <header class="min-h-screen flex flex-col justify-center px-4 sm:px-8 max-w-[1400px] mx-auto pt-20">
+        <div class="fade-up inline-flex items-center gap-3 px-4 py-1.5 border border-zinc-800 rounded-full mb-10 w-fit backdrop-blur-md">
+            <span class="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
+            <span class="text-[9px] sm:text-[10px] uppercase tracking-[0.4em] font-bold text-zinc-400">Website Builder | Designer</span>
+        </div>
+        <h1 class="fade-up text-4xl sm:text-5xl md:text-6xl lg:text-[5.5rem] font-extrabold leading-[1.1] tracking-tighter uppercase mb-8 sm:mb-12 text-white">
+            <div class="whitespace-nowrap">LETS BUILD</div>
+            <div id="typing-text" class="text-pink-500 italic typing-cursor whitespace-nowrap">YOUR VISION</div>
+        </h1>
+        <p class="fade-up text-sm sm:text-[18px] uppercase text-zinc-400 font-bold max-w-3xl leading-relaxed mb-10 tracking-wide">
+            DESIGNING AND BUILDING HIGH-PERFORMANCE WEB ECOSYSTEMS THAT MERGE <span class="text-white font-bold">TECHNICAL LOGIC</span> WITH <span class="text-white font-bold italic">BESPOKE AESTHETICS</span>.
+        </p>
+
+        <div class="fade-up flex flex-wrap gap-4 sm:gap-6 mb-16">
+            <a href="#services" class="px-6 sm:px-8 py-3 sm:py-4 bg-pink-500 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest hover:bg-white hover:text-black transition-all shadow-lg">View Services</a>
+            <a href="#about" class="px-6 sm:px-8 py-3 sm:py-4 border border-zinc-800 text-white font-black uppercase text-[10px] sm:text-xs tracking-widest hover:border-pink-500 hover:text-pink-500 transition-all">My Story</a>
+        </div>
+        
+        <div class="fade-up flex flex-wrap gap-10 sm:gap-16 border-t border-zinc-900 pt-12">
+            <div class="space-y-1">
+                <p class="text-[9px] sm:text-[11px] font-bold uppercase text-zinc-600 tracking-[0.3em]">Build Site Log</p>
+                <div class="flex items-end">
+                    <h3 class="text-4xl sm:text-6xl font-extrabold tracking-tighter count-up" data-target="124">0</h3>
+                    <span class="text-xl sm:text-3xl font-bold text-pink-500 mb-1 ml-1">+</span>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <p class="text-[9px] sm:text-[11px] font-bold uppercase text-zinc-600 tracking-[0.3em]">Success Rate</p>
+                <div class="flex items-end">
+                    <h3 class="text-4xl sm:text-6xl font-extrabold tracking-tighter count-up" data-target="100">0</h3>
+                    <span class="text-xl sm:text-3xl font-bold text-zinc-800 mb-1 ml-1">%</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="py-12 sm:py-20 px-4 sm:px-8 max-w-[1400px] mx-auto border-y border-zinc-900 bg-zinc-950/20">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center fade-up">
+            <div class="flex items-center gap-6 sm:gap-8 group">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div>
+                    <p class="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 mb-1">Direct Network Node</p>
+                    <h4 class="text-lg sm:text-2xl font-bold text-white uppercase group-hover:text-pink-500 transition-colors break-all">embodocrisdave45@gmail.com</h4>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 sm:gap-8 group">
+                <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke-width="2"/></svg>
+                </div>
+                <div>
+                    <p class="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600 mb-1">Secure Voice Node</p>
+                    <h4 class="text-lg sm:text-2xl font-bold text-white uppercase group-hover:text-green-500 transition-colors">09770738429</h4>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto border-b border-zinc-900">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-center fade-up">
+            <div class="lg:col-span-5">
+                <div class="aspect-[4/5] neo-card rounded-[2.5rem] overflow-hidden relative flex items-center justify-center group border border-zinc-800">
+                    <img src="Images/Its_Cris.png" alt="Cris Dave Embodo" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-90"></div>
+                    <span class="text-4xl font-black text-white/5 uppercase tracking-[1em] rotate-90 select-none relative z-10">IDENTITY</span>
+                </div>
+            </div>
+            <div class="lg:col-span-7">
+                <p class="text-pink-500 text-[10px] font-black uppercase tracking-[0.5em] mb-4 sm:mb-6">01. MY STORY / ABOUT US</p>
+                <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase mb-8 sm:mb-10 text-white">Technical <br><span class="text-zinc-600">Identity</span>.</h2>
+                <div class="space-y-6 sm:space-y-8 text-zinc-400 text-base sm:text-lg md:text-xl font-light leading-relaxed mb-8 sm:mb-10">
+                    <p>I am <span class="text-white font-semibold">Cris Dave Embodo</span>—an Information Systems graduate and dedicated Website Designer and Builder. I approach every build with the precision of a system engineer, ensuring structural integrity and high-fidelity aesthetics.</p>
+                </div>
+                
+                <div class="pt-8 border-t border-zinc-900 mb-8">
+                    <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-6">
+                        <a href="https://drive.google.com/file/d/1ziH3WsSfkgrbWzLO5mXuYtezFh9ygTM5/view?usp=drive_link" target="_blank" class="px-8 py-4 bg-white text-black font-black uppercase text-[11px] tracking-widest hover:bg-pink-500 hover:text-white transition-all shadow-lg w-full sm:w-auto text-center">Download CV</a>
+                        <div class="flex gap-4">
+                            <a href="mailto:embodocrisdave45@gmail.com" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-pink-500 transition-all group"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-pink-500 transition-colors" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                            <a href="https://www.facebook.com/CDfunnel" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-[#1877F2] group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#1877F2]" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+                            <a href="https://www.linkedin.com/in/cris-dave-embodo-b895711b1/" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-[#0A66C2] group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#0A66C2]" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                            <a href="https://github.com/Maghari45" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-white group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-white" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.744.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+                            <a href="https://www.tiktok.com/@maghari45" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-pink-500 transition-all group"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#ff0050] transition-colors" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.03 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.1-3.34-3.12-3.48-5.4-.15-1.46.22-2.94.94-4.2 1.05-1.85 3.06-3.12 5.17-3.23.51-.04 1.03-.02 1.54.03.01 1.53-.01 3.06-.01 4.59-.5-.12-1.02-.18-1.54-.15-.81.01-1.64.21-2.34.61-.9.51-1.54 1.4-1.69 2.42-.14 1 .2 2.05.9 2.82.72.77 1.8 1.16 2.84 1.08 1.04-.04 1.99-.61 2.59-1.46.43-.6.67-1.32.71-2.05.02-4.14.02-8.28.02-12.43z"/></svg></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="education" class="py-20 lg:py-40 bg-zinc-950 border-b border-zinc-900">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-32 items-center fade-up">
+            <div class="lg:col-span-6">
+                <p class="text-pink-500 text-[10px] font-black uppercase tracking-[0.5em] mb-6">02. EDUCATIONAL BACKGROUND</p>
+                <h2 class="text-4xl md:text-5xl font-extrabold uppercase mb-12 sm:mb-16 italic text-white">Academic <span class="text-zinc-600">History</span>.</h2>
+                <div class="space-y-10 sm:space-y-12 border-l border-zinc-900 ml-2 pl-8 sm:pl-12 relative">
+                    <div class="relative"><div class="absolute -left-[38px] sm:-left-[54px] top-1.5 w-3 h-3 bg-pink-500 rounded-full shadow-[0_0_15px_#ff00ff]"></div><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">BS Information Systems</h4><p class="text-zinc-400 text-xs sm:text-sm mt-2 font-bold uppercase tracking-widest">Davao del Norte State College (DNSC)</p></div>
+                    <div class="relative"><div class="absolute -left-[38px] sm:-left-[54px] top-1.5 w-3 h-3 bg-zinc-800 rounded-full"></div><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">Senior High School</h4><p class="text-zinc-400 text-xs sm:text-sm mt-2 font-bold uppercase tracking-widest">ACES Polytechnic College</p></div>
+                    <div class="relative"><div class="absolute -left-[38px] sm:-left-[54px] top-1.5 w-3 h-3 bg-zinc-800 rounded-full"></div><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">Junior High School</h4><p class="text-zinc-400 text-xs sm:text-sm mt-2 font-bold uppercase tracking-widest">Malativas National High School</p></div>
+                    <div class="relative"><div class="absolute -left-[38px] sm:-left-[54px] top-1.5 w-3 h-3 bg-zinc-800 rounded-full"></div><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">Elementary</h4><p class="text-zinc-400 text-xs sm:text-sm mt-2 font-bold uppercase tracking-widest">Malativas Elementary School</p></div>
+                </div>
+            </div>
+            <div class="lg:col-span-6">
+                <h2 class="text-3xl sm:text-4xl font-extrabold uppercase mb-8 sm:mb-12 italic text-center text-white">Capability <span class="text-pink-500">Node</span>.</h2>
+                <div class="radar-container neo-card rounded-[2rem] sm:rounded-[3rem] border-zinc-800 bg-black overflow-hidden flex items-center justify-center capability-anim"><canvas id="skillRadar"></canvas></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="experience" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto border-b border-zinc-900 w-full">
+        <div class="fade-up w-full">
+            <p class="text-pink-500 text-[10px] font-black uppercase tracking-[0.5em] mb-6">03. CAREER TIMELINE</p>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase mb-12 sm:mb-20 text-white">Developer <br><span class="text-zinc-600">Experience</span>.</h2>
+            
+            <div class="ide-container w-full">
+                <div class="ide-header">
+                    <div class="ide-dot bg-red-500"></div>
+                    <div class="ide-dot bg-yellow-500"></div>
+                    <div class="ide-dot bg-green-500"></div>
+                    <span class="text-[10px] text-zinc-500 ml-2 sm:ml-4 font-mono">cris_dave_journey.js</span>
+                </div>
+                <div class="ide-body text-zinc-300 font-mono text-xs sm:text-sm leading-loose">
+                    <div class="ide-item">
+                        <div class="ide-marker"></div>
+                        <p class="mb-2"><span class="syntax-keyword">const</span> <span class="syntax-string">currentRole</span> = <span class="text-pink-500">"Professional Web Builder"</span>;</p>
+                        <p class="text-zinc-400 font-sans text-sm sm:text-base leading-relaxed border border-zinc-800 bg-[#0a0a0a] p-4 sm:p-6 rounded-xl shadow-lg">After graduating, I immediately landed a job in agency web development. Today, I actively engineer real-world web environments, creating, designing, and deploying highly optimized websites for global clients. I have successfully built and deployed over 120+ client sites.</p>
+                    </div>
+
+                    <div class="ide-item">
+                        <div class="ide-marker" style="background:#444; box-shadow:none;"></div>
+                        <p class="mb-2"><span class="syntax-keyword">async function</span> <span class="syntax-string">graduate</span>() {</p>
+                        <p class="pl-2 sm:pl-4 mb-2"><span class="syntax-comment">// Capstone Project</span></p>
+                        <p class="pl-2 sm:pl-4 mb-2"><span class="text-pink-500">await</span> buildSystem(<span class="syntax-string">'Bookkeeping Mgt System'</span>);</p>
+                        <p class="text-zinc-400 font-sans text-sm sm:text-base leading-relaxed border border-zinc-800 bg-[#0a0a0a] p-4 sm:p-6 rounded-xl mt-4 shadow-lg">Transitioned to modern web development using VS Code. I began writing robust code for websites, ultimately finishing my college degree by developing and delivering a comprehensive Bookkeeping Management System.</p>
+                    </div>
+
+                    <div class="ide-item">
+                        <div class="ide-marker" style="background:#444; box-shadow:none;"></div>
+                        <p class="mb-2"><span class="syntax-keyword">class</span> <span class="syntax-string">EarlyCollege</span> {</p>
+                        <p class="pl-2 sm:pl-4 mb-2">stack = [<span class="syntax-string">'Java'</span>, <span class="syntax-string">'NetBeans'</span>];</p>
+                        <p class="text-zinc-400 font-sans text-sm sm:text-base leading-relaxed border border-zinc-800 bg-[#0a0a0a] p-4 sm:p-6 rounded-xl mt-4 shadow-lg">Started my software development journey during my early college years. Before shifting to the web, I focused on application logic using Java and NetBeans, successfully building desktop applications including a full Point of Sale (POS) system.</p>
+                        <p class="mt-4">}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="services" class="py-20 lg:py-40 bg-zinc-950/40 border-b border-zinc-900">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 fade-up">
+            <div>
+                <p class="text-pink-500 text-[10px] font-black uppercase tracking-[0.5em] mb-6">04. EXPERTISE</p>
+                <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase mb-10 leading-none text-white">Professional <br><span class="text-zinc-600">Services</span>.</h2>
+                <div class="space-y-6 sm:space-y-8">
+                    <div class="p-6 sm:p-8 neo-card rounded-[2rem] sm:rounded-3xl hover:border-pink-500 transition-colors"><div class="flex items-center gap-4 mb-4"><svg class="w-6 h-6 sm:w-8 sm:h-8 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">Web Design & Dev</h4></div><p class="text-zinc-500 text-xs sm:text-sm leading-relaxed">End-to-end architecture from aesthetic prototyping to semantic builds.</p></div>
+                    <div class="p-6 sm:p-8 neo-card rounded-[2rem] sm:rounded-3xl hover:border-pink-500 transition-colors"><div class="flex items-center gap-4 mb-4"><svg class="w-6 h-6 sm:w-8 sm:h-8 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg><h4 class="text-xl sm:text-2xl font-bold uppercase text-white">Local SEO</h4></div><p class="text-zinc-500 text-xs sm:text-sm leading-relaxed">Technical markup ensuring high regional authority.</p></div>
+                </div>
+            </div>
+            
+            <div class="bg-black p-8 sm:p-12 rounded-[2rem] sm:rounded-[3rem] border border-zinc-900 shadow-2xl flex flex-col justify-center relative overflow-hidden mt-8 lg:mt-0">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-pink-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                <p class="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em] mb-4 sm:mb-6 relative z-10">Online Impact</p>
+                <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter uppercase mb-8 sm:mb-12 leading-none italic text-pink-500 relative z-10">Key Benefits.</h2>
+                
+                <div class="space-y-6 sm:space-y-8 relative z-10">
+                    <div class="p-5 sm:p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-pink-500/50 transition-colors flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+                        <div class="bg-black p-3 rounded-xl border border-zinc-800 text-pink-500 shadow-lg flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                        </div>
+                        <div>
+                            <h5 class="text-white font-bold uppercase text-xs sm:text-sm mb-2 tracking-widest">Revenue Conversion</h5>
+                            <p class="text-zinc-500 text-xs sm:text-sm leading-relaxed">Strategic UX flows designed to seamlessly guide customers through a logical path, effectively turning casual traffic into dedicated profit.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 sm:p-6 bg-zinc-900/40 border border-zinc-800 rounded-2xl hover:border-pink-500/50 transition-colors flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+                        <div class="bg-black p-3 rounded-xl border border-zinc-800 text-pink-500 shadow-lg flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        </div>
+                        <div>
+                            <h5 class="text-white font-bold uppercase text-xs sm:text-sm mb-2 tracking-widest">Brand Authority</h5>
+                            <p class="text-zinc-500 text-xs sm:text-sm leading-relaxed">A professional, bug-free, and high-speed build establishes immediate trust and prestige with high-tier clientele across any industry.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="featured" class="py-20 lg:py-40 bg-zinc-950/20 border-b border-zinc-900 overflow-hidden">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-8 mb-12 sm:mb-16 fade-up">
+            <p class="text-[11px] font-bold uppercase text-pink-500 tracking-[0.5em] mb-4">05. ELITE PORTFOLIO</p>
+            <h2 class="text-4xl sm:text-5xl font-extrabold tracking-tighter uppercase leading-none text-white">Featured <br> <span class="text-zinc-600">Masterpieces</span>.</h2>
+        </div>
+        <div class="flex flex-col gap-6 fade-up">
+            <div class="marquee-section-container"><button class="row-nav-btn btn-prev hidden sm:flex" onclick="manualScrollRow('row-1-scroller', 'l')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button><button class="row-nav-btn btn-next hidden sm:flex" onclick="manualScrollRow('row-1-scroller', 'r')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button><div class="marquee-row-outer" id="row-1-scroller"><div class="marquee-row-inner marquee-left" id="row-1-inner"></div></div></div>
+            <div class="marquee-section-container"><button class="row-nav-btn btn-prev hidden sm:flex" onclick="manualScrollRow('row-2-scroller', 'l')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button><button class="row-nav-btn btn-next hidden sm:flex" onclick="manualScrollRow('row-2-scroller', 'r')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button><div class="marquee-row-outer" id="row-2-scroller"><div class="marquee-row-inner marquee-right" id="row-2-inner"></div></div></div>
+            <div class="marquee-section-container"><button class="row-nav-btn btn-prev hidden sm:flex" onclick="manualScrollRow('row-3-scroller', 'l')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button><button class="row-nav-btn btn-next hidden sm:flex" onclick="manualScrollRow('row-3-scroller', 'r')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button><div class="marquee-row-outer" id="row-3-scroller"><div class="marquee-row-inner marquee-left" id="row-3-inner"></div></div></div>
+            <div class="marquee-section-container"><button class="row-nav-btn btn-prev hidden sm:flex" onclick="manualScrollRow('row-4-scroller', 'l')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button><button class="row-nav-btn btn-next hidden sm:flex" onclick="manualScrollRow('row-4-scroller', 'r')"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button><div class="marquee-row-outer" id="row-4-scroller"><div class="marquee-row-inner marquee-right" id="row-4-inner"></div></div></div>
+        </div>
+    </section>
+
+    <section id="industries" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto border-b border-zinc-900">
+        <div class="mb-12 sm:mb-16 fade-up">
+            <p class="text-pink-500 text-[11px] font-black uppercase tracking-[0.5em] mb-4">06. SECTOR REACH</p>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase mb-6 text-white">Industries I <br><span class="text-zinc-600">Build For</span>.</h2>
+            <p class="text-zinc-400 text-sm sm:text-lg font-light max-w-2xl">I build several site industries with any kind.</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 fade-up" id="industry-grid">
+            <div class="industry-node group"><img src="Images/Automotive.png" class="industry-img" alt="Auto"><div class="industry-overlay"></div><span class="industry-text">Automotive</span></div>
+            <div class="industry-node group"><img src="Images/Beauty and Care.png" class="industry-img" alt="Beauty"><div class="industry-overlay"></div><span class="industry-text">Beauty & Care</span></div>
+            <div class="industry-node group"><img src="Images/Landscaping.png" class="industry-img" alt="Landscape"><div class="industry-overlay"></div><span class="industry-text">Landscaping</span></div>
+            <div class="industry-node group"><img src="Images/Contractor.png" class="industry-img" alt="Contractor"><div class="industry-overlay"></div><span class="industry-text">Contractor</span></div>
+            <div class="industry-node group"><img src="Images/Construction.png" class="industry-img" alt="Construction"><div class="industry-overlay"></div><span class="industry-text">Construction</span></div>
+            <div class="industry-node group"><img src="Images/Fitness.png" class="industry-img" alt="Fitness"><div class="industry-overlay"></div><span class="industry-text">Fitness</span></div>
+            <div class="industry-node group"><img src="Images/Medical.png" class="industry-img" alt="Medical"><div class="industry-overlay"></div><span class="industry-text">Medical</span></div>
+            <div class="industry-node group"><img src="Images/Consultant.png" class="industry-img" alt="Consultant"><div class="industry-overlay"></div><span class="industry-text">Consultant</span></div>
+        </div>
+    </section>
+
+    <section id="vault" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto border-b border-zinc-900">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 sm:gap-10 mb-8 sm:mb-10 fade-up">
+            <div><p class="text-[11px] font-bold uppercase text-pink-500 tracking-[0.5em] mb-4">07. DIRECTORY</p><h2 class="text-4xl sm:text-5xl font-extrabold uppercase text-white">Build <span class="text-zinc-600">Archive</span>.</h2></div>
+            <div class="flex flex-wrap gap-2 p-1 bg-zinc-900 border border-zinc-800 rounded-xl sm:rounded-full w-full md:w-auto">
+                <button onclick="renderVault('featured')" class="vault-btn flex-grow sm:flex-grow-0" data-cat="featured">Featured</button>
+                <button onclick="renderVault('single')" class="vault-btn active flex-grow sm:flex-grow-0" data-cat="single">Single Page</button>
+                <button onclick="renderVault('tier1')" class="vault-btn flex-grow sm:flex-grow-0" data-cat="tier1">Tier 1</button>
+                <button onclick="renderVault('tier2')" class="vault-btn flex-grow sm:flex-grow-0" data-cat="tier2">Tier 2</button>
+                <button onclick="renderVault('tier3')" class="vault-btn flex-grow sm:flex-grow-0" data-cat="tier3">Tier 3</button>
+            </div>
+        </div>
+        <div id="vault-count" class="text-[10px] sm:text-xs text-pink-500 font-black tracking-[0.3em] uppercase mb-4 text-right fade-up">SHOWING 0 MASTERPIECES</div>
+        
+        <div class="border border-zinc-900 rounded-[1.5rem] sm:rounded-3xl overflow-hidden bg-black/40 fade-up">
+            <div class="overflow-x-auto w-full">
+                <div class="min-w-[600px]">
+                    <div class="archive-table-header text-[10px] font-black uppercase tracking-[0.4em] text-zinc-600"><div>NO.</div><div>Class</div><div>Build Identity</div></div>
+                    <div id="vault-list" class="divide-y divide-zinc-900 max-h-[450px] overflow-y-auto pr-2" data-lenis-prevent></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="learning" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto bg-zinc-950/5 border-b border-zinc-900">
+        <div class="mb-12 sm:mb-20 text-center fade-up">
+            <p class="text-[11px] font-bold uppercase text-pink-500 tracking-[0.5em] mb-4">08. EVOLUTION PROTOCOL</p>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase text-white">Still <span class="text-zinc-600">Learning</span>.</h2>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-8 fade-up">
+            <a href="https://laravel.com/" target="_blank" class="tech-icon group" style="--i:1">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="Laravel">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#FF2D20]">Laravel</p>
+            </a>
+            <a href="https://www.php.net/" target="_blank" class="tech-icon group" style="--i:2">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="PHP">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#777BB4]">PHP Logic</p>
+            </a>
+            <a href="https://tailwindcss.com/" target="_blank" class="tech-icon group" style="--i:3">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="Tailwind">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#06B6D4]">Tailwind</p>
+            </a>
+            <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" class="tech-icon group" style="--i:4">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="JavaScript">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#F7DF1E]">JavaScript</p>
+            </a>
+            <a href="https://www.mysql.com/" target="_blank" class="tech-icon group" style="--i:5">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original-wordmark.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="MySQL">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#4479A1]">MySQL</p>
+            </a>
+            <a href="https://developer.mozilla.org/en-US/docs/Web/CSS" target="_blank" class="tech-icon group" style="--i:6">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="CSS3">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#1572B6]">CSS3</p>
+            </a>
+            <a href="https://jquery.com/" target="_blank" class="tech-icon group" style="--i:7">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jquery/jquery-original-wordmark.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="jQuery">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#0769AD]">jQuery</p>
+            </a>
+            <a href="https://nodejs.org/" target="_blank" class="tech-icon group" style="--i:8">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original-wordmark.svg" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto object-contain transition-transform" alt="Node.js">
+                <p class="text-[9px] sm:text-[10px] font-black uppercase mt-4 text-[#339933]">Node.js</p>
+            </a>
+        </div>
+    </section>
+
+    <section id="toolbox" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto border-b border-zinc-900 bg-zinc-950/20">
+        <div class="mb-12 sm:mb-20 fade-up">
+            <p class="text-pink-500 text-[11px] font-black uppercase tracking-[0.5em] mb-4">09. ARCHITECTURE STACK</p>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tighter uppercase mb-6 text-white">System <br><span class="text-zinc-600">Toolbox</span>.</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-8 fade-up">
+            <div class="tool-card group">
+                <div class="tool-tag">Foundation</div>
+                <h3 class="text-xl sm:text-2xl font-bold uppercase mb-4 sm:mb-6 text-white">Core Tech</h3>
+                <div class="flex flex-wrap gap-2 sm:gap-3">
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">HTML / CSS</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">PHP Logic</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">UI Designing</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">LARAVEL FRAMEWORK</span>
+                </div>
+            </div>
+            <div class="tool-card group">
+                <div class="tool-tag">Optimization</div>
+                <h3 class="text-xl sm:text-2xl font-bold uppercase mb-4 sm:mb-6 text-white">Build Systems</h3>
+                <div class="flex flex-wrap gap-2 sm:gap-3">
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">WordPress</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">DUDA Builder</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">GODADDY</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">VS CODE</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-pink-500/10 border border-pink-500/30 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-pink-500">SEO STRATEGY</span>
+                </div>
+            </div>
+            <div class="tool-card group">
+                <div class="tool-tag">Infrastructure</div>
+                <h3 class="text-xl sm:text-2xl font-bold uppercase mb-4 sm:mb-6 text-white">Operations</h3>
+                <div class="flex flex-wrap gap-2 sm:gap-3">
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">VS Code</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">GitHub</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Hostinger</span>
+                </div>
+            </div>
+            <div class="tool-card group">
+                <div class="tool-tag">Creative</div>
+                <h3 class="text-xl sm:text-2xl font-bold uppercase mb-4 sm:mb-6 text-white">Visual Resources</h3>
+                <div class="flex flex-wrap gap-2 sm:gap-3">
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Figma</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Canva</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Pinterest</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Shutterstock</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">Font Awesome</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">GetWaves</span>
+                    <span class="px-3 sm:px-4 py-1.5 sm:py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-zinc-400 group-hover:border-pink-500 transition-all">ionic.io</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-20 lg:py-40 px-4 sm:px-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 border-t border-zinc-900 fade-up">
+        <div class="flex flex-col h-full">
+            <h2 class="text-4xl font-extrabold uppercase mb-8 italic text-white">Current <span class="text-pink-500">Coordinates</span>.</h2>
+            <div class="flex-grow rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden border border-zinc-900 bg-black shadow-2xl min-h-[350px] sm:min-h-[450px]">
+                <iframe class="map-frame" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63321.4!2d125.64!3d7.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32f9506691456577%3A0xc47e3a9d18f5a507!2sPanabo%2C%20Davao%20del%20Norte!5e0!3m2!1sen!2sph!4v1715100000000" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+        </div>
+        <div>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold uppercase italic mb-8 tracking-tighter leading-none text-white">Initiate <br><span class="text-pink-500">Connection</span>.</h2>
+            <form action="mailto:embodocrisdave45@gmail.com" method="POST" enctype="text/plain" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><input type="text" placeholder="NAME" required class="w-full bg-transparent border-b border-zinc-800 py-3 sm:py-4 focus:border-pink-500 outline-none uppercase text-xs text-white"> <input type="email" placeholder="EMAIL" required class="w-full bg-transparent border-b border-zinc-800 py-3 sm:py-4 focus:border-pink-500 outline-none uppercase text-xs text-white"></div>
+                <select class="w-full bg-black border-b border-zinc-800 py-3 sm:py-4 focus:border-pink-500 outline-none uppercase text-xs text-zinc-400 cursor-pointer"><option value="" disabled selected>TYPE OF SERVICE (OPTIONAL)</option><option value="web">Web Design & Web Development</option><option value="seo">Local SEO</option><option value="other">Other</option></select>
+                <textarea placeholder="MESSAGE" rows="4" class="w-full bg-transparent border-b border-zinc-800 py-3 sm:py-4 focus:border-pink-500 outline-none uppercase text-xs text-white resize-none"></textarea>
+                <div class="pt-4"><button type="submit" class="w-full sm:w-auto px-10 py-4 sm:py-5 bg-white text-black font-black uppercase text-xs tracking-[0.3em] hover:bg-pink-500 hover:text-white transition-all shadow-lg">Submit Request</button></div>
+            </form>
+        </div>
+    </section>
+</main>
+
+<footer class="py-16 sm:py-24 border-t border-zinc-900 bg-zinc-950">
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-8">
+        <div class="spotlight-branding-container">
+            <h2 class="spotlight-text">
+                <span class="spot-char">C</span><span class="spot-char">R</span><span class="spot-char">I</span><span class="spot-char">S</span><span class="spot-space"></span><span class="spot-char">D</span><span class="spot-char">A</span><span class="spot-char">V</span><span class="spot-char">E</span><span class="spot-space"></span><span class="spot-char">E</span><span class="spot-char">M</span><span class="spot-char">B</span><span class="spot-char">O</span><span class="spot-char">D</span><span class="spot-char">O</span>
+            </h2>
+        </div>
+        <div class="py-8 sm:py-12 flex flex-col items-center gap-8 sm:gap-10">
+            <div class="flex flex-wrap justify-center gap-4 sm:gap-8">
+                <a href="mailto:embodocrisdave45@gmail.com" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-pink-500 transition-all group"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-pink-500" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+                <a href="https://www.facebook.com/CDfunnel" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-[#1877F2] group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#1877F2]" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+                <a href="https://www.linkedin.com/in/cris-dave-embodo-b895711b1/" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-[#0A66C2] group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#0A66C2]" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                <a href="https://github.com/Maghari45" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-white group transition-all"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-white" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.744.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+                <a href="https://www.tiktok.com/@maghari45" target="_blank" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-zinc-800 flex items-center justify-center hover:border-pink-500 transition-all group"><svg class="w-4 h-4 sm:w-5 sm:h-5 fill-zinc-500 group-hover:fill-[#ff0050] transition-colors" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.03 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.1-3.34-3.12-3.48-5.4-.15-1.46.22-2.94.94-4.2 1.05-1.85 3.06-3.12 5.17-3.23.51-.04 1.03-.02 1.54.03.01 1.53-.01 3.06-.01 4.59-.5-.12-1.02-.18-1.54-.15-.81.01-1.64.21-2.34.61-.9.51-1.54 1.4-1.69 2.42-.14 1 .2 2.05.9 2.82.72.77 1.8 1.16 2.84 1.08 1.04-.04 1.99-.61 2.59-1.46.43-.6.67-1.32.71-2.05.02-4.14.02-8.28.02-12.43z"/></svg></a>
+            </div>
+            <p class="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.6em] text-zinc-700">© 2026 CRAFTED BY CRIS // DESIGNER & BUILDER</p>
+        </div>
+    </div>
+</footer>
+
+<script>
+// --- Safe Lenis Smooth Scroll Initialization ---
+document.addEventListener("DOMContentLoaded", function () {
+    if (typeof Lenis !== 'undefined') {
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+            smooth: true,
+            smoothWheel: true,
+        });
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                lenis.scrollTo(this.getAttribute('href'));
+            });
+        });
+
+        // Map Back to Top specifically to Lenis
+        const backToTopBtn = document.getElementById("back-to-top");
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener("click", () => lenis.scrollTo(0));
+        }
+    } else {
+        // Fallback
+        document.documentElement.style.scrollBehavior = 'smooth';
+        const backToTopBtn = document.getElementById("back-to-top");
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener("click", () => window.scrollTo({top: 0, behavior: 'smooth'}));
+        }
+    }
+});
+
+let tScene, tCamera, tRenderer, tBoxes = [];
+function initThree() {
+    const canvas = document.getElementById('three-canvas'); if(!canvas) return;
+    tScene = new THREE.Scene(); tCamera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    tRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false }); tRenderer.setSize(window.innerWidth, window.innerHeight);
+    const grid = new THREE.GridHelper(60, 30, 0x111111, 0x050505); grid.position.y = -10; tScene.add(grid);
+    tBoxes = []; const boxMat = new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.1 });
+    for(let i=0; i<15; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), boxMat); m.position.set((Math.random()-0.5)*40, (Math.random()-0.5)*30, (Math.random()-0.5)*20); tScene.add(m); tBoxes.push({ m, spd: Math.random()*0.02 + 0.005 }); }
+    tCamera.position.z = 20;
+}
+function animBG() { if(!tRenderer || !tScene || !tCamera) return; tBoxes.forEach(b => { b.m.position.x += b.spd; b.m.rotation.y += 0.01; if(b.m.position.x > 30) b.m.position.x = -30; }); tRenderer.render(tScene, tCamera); requestAnimationFrame(animBG); }
+
+function initCursor() {
+    const c = document.getElementById('custom-cursor'), f = document.getElementById('cursor-follower'); if(!c) return;
+    if (navigator.maxTouchPoints > 0) return;
+    c.style.display = 'block'; f.style.display = 'flex';
+    document.addEventListener('mousemove', e => { 
+        c.style.transform = `translate(${e.clientX - 4}px, ${e.clientY - 4}px)`; 
+        f.style.transform = `translate(${e.clientX - 15}px, ${e.clientY - 15}px)`; 
+    });
+}
+
+window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById("scroll-line").style.width = (winScroll / height) * 100 + "%";
+    document.getElementById("back-to-top").classList.toggle('visible', winScroll > 500);
+});
+
+window.manualScrollRow = (id, dir) => { const el = document.getElementById(id); if(el) el.scrollBy({ left: dir === 'l' ? -450 : 450, behavior: 'smooth' }); };
+
+const allProjects = [
+    { t: "Low Temp HVAC, LLC", l: "https://preview.consumrbuzz.com/preview/459f08e7?t=1777408043447", cat: "Single", h: false, img: "Images/site1.png" },
+    { t: "Aranda Family Child Care", l: "http://preview.consumrbuzz.com/preview/0d844f96?t=1777408166115", cat: "Single", h: false, img: "Images/site2.png" },
+    { t: "Aunnica s Creative House", l: "http://preview.consumrbuzz.com/preview/248a7344?t=1777408289849", cat: "Single", h: true, img: "Images/Aunnica s Creative House.png"},
+    { t: "Thrifty Automotive", l: "http://preview.consumrbuzz.com/preview/0314bd21?t=1775765984600", cat: "Single", h: false, img: "Images/site4.png" },
+    { t: "North 40 Tree And Landscaping", l: "http://preview.consumrbuzz.com/preview/099a1d45?t=1775765596155", cat: "Single", h: false, img: "Images/site5.png" },
+    { t: "BST Plumbing", l: "http://preview.consumrbuzz.com/preview/337123b8?t=1775320180020", cat: "Single", h: false, img: "Images/site6.png" },
+    { t: "Cool World Window Tinting", l: "http://preview.consumrbuzz.com/preview/2fb514a7?t=1775145047529", cat: "Single", h: false, img: "Images/site7.png" },
+    { t: "Showtime Mobile Detailing", l: "http://preview.consumrbuzz.com/preview/6839abbc?t=1774040769829", cat: "Single", h: false, img: "Images/site8.png" },
+    { t: "Norris Notary & Signing", l: "http://preview.consumrbuzz.com/preview/a7094c7e?t=1773955782240", cat: "Single", h: false, img: "Images/site9.png" },
+    { t: "A Fedeli Remodeling", l: "https://preview.consumrbuzz.com/preview/1bf28535?t=1773411841324", cat: "Single", h: false, img: "Images/site10.png" },
+    { t: "F & L Mobile Tire Service", l: "https://preview.consumrbuzz.com/preview/7da0fabc?t=1772119300113", cat: "Single", h: false, img: "Images/site11.png" },
+    { t: "RCK Environmental Services", l: "https://preview.consumrbuzz.com/preview/7b0c1dee?t=1770312924151", cat: "Single", h: false, img: "Images/site12.png" },
+    { t: "Fox Disc Jockey", l: "https://preview.consumrbuzz.com/preview/94163dcb?t=1767389006710", cat: "Single", h: true, img: "Images/FoxDiscJockey.png"},
+    { t: "Just Screw It", l: "https://preview.consumrbuzz.com/preview/a2a00ad0?t=1766774253996", cat: "Single", h: false, img: "Images/site14.png" },
+    { t: "AK Auto Repair and Towing", l: "https://preview.consumrbuzz.com/preview/e81cfd1c?t=1766528072627", cat: "Single", h: false, img: "Images/site15.png" },
+    { t: "Foothills RV Specialist", l: "http://preview.consumrbuzz.com/preview/3d44acf7?t=1766008863850", cat: "Single", h: false, img: "Images/site16.png" },
+    { t: "Donna's Handmade Wreaths", l: "https://preview.consumrbuzz.com/preview/0df754d3?t=1765573786661", cat: "Single", h: false, img: "Images/site17.png" },
+    { t: "Tonya's Cleaning Service", l: "http://preview.consumrbuzz.com/preview/72bbeb3a?t=1777413130741", cat: "Single", h: false, img: "Images/site18.png" },
+    { t: "SMK Masonry", l: "http://preview.consumrbuzz.com/preview/af639b9d?t=1764710268820", cat: "Single", h: false, img: "Images/site19.png" },
+    { t: "RD's House Repair", l: "https://preview.consumrbuzz.com/preview/949500ef?t=1764176725041", cat: "Single", h: false, img: "Images/site20.png" },
+    { t: "Grantham Clock Clinic", l: "https://preview.consumrbuzz.com/preview/69a7c4b5?t=1764170934915", cat: "Single", h: false, img: "Images/site21.png" },
+    { t: "Pack One Moving & Labor", l: "https://preview.consumrbuzz.com/preview/23f90aac?t=1763582510946", cat: "Single", h: true, img: "Images/Pack One Moving & Labor.png"},
+    { t: "Ramblewood Cabinet Co", l: "https://preview.consumrbuzz.com/preview/8ba5314d?t=1762981546551", cat: "Single", h: true, img: "Images/Ramblewood Cabinet Co.png"},
+    { t: "Handyman Specialist", l: "https://preview.consumrbuzz.com/preview/16b64e12?t=1762874803006", cat: "Single", h: true, img: "Images/Handyman Specialist.png"},
+    { t: "UncleBob's Home Remodeling", l: "http://preview.consumrbuzz.com/preview/576c2223?t=1762465967531", cat: "Single", h: false, img: "Images/site25.png" },
+    { t: "MIDSTAY", l: "https://preview.consumrbuzz.com/preview/4c0a5423?t=1761946119586", cat: "Single", h: true, img: "Images/MIDSTAY.png"},
+    { t: "Green River Paw Spa", l: "https://preview.consumrbuzz.com/preview/c51511d3?t=1761307655746", cat: "Single", h: true, img: "Images/Green River Paw Spa.png"},
+    { t: "Hurst Wood Products LLC", l: "https://preview.consumrbuzz.com/preview/010e0feb?t=1760017661370", cat: "Single", h: true, img: "Images/Hurst Wood Products LLC.png" },
+    { t: "John Upton DIA Lawn Care", l: "https://preview.consumrbuzz.com/preview/2e6799a6?t=1759268512239", cat: "Single", h: true, img: "Images/John Upton DIA Lawn Care.png"},
+    { t: "Grease Monkey OTG", l: "https://preview.consumrbuzz.com/preview/0234297c?t=1758143695459", cat: "Single", h: true, img: "Images/Grease Monkey OTG.png"},
+    { t: "Bark Alley Pet Grooming", l: "https://preview.consumrbuzz.com/preview/b28420b3?t=1756846284497", cat: "Single", h: true, img: "Images/Bark Alley Pet Grooming.png" },
+    { t: "Simmons Pool Service", l: "https://preview.consumrbuzz.com/preview/ace1ed2e?t=1756239654657", cat: "Single", h: true, img: "Images/Simmons Pool Service.png" },
+    { t: "FC Custom Upholstery", l: "https://preview.consumrbuzz.com/preview/ce922089?t=1755784212242", cat: "Single", h: true, img: "Images/FC Custom Upholstery.png"},
+    { t: "Andy Rooter Drains", l: "https://preview.consumrbuzz.com/preview/4f006bd1?t=1755639784519", cat: "Single", h: true, img: "Images/Andy Rooter Drains.png"},
+    { t: "Big Deal Mattress Warehouse", l: "https://preview.consumrbuzz.com/preview/cb0be126?t=1753386602566", cat: "Single", h: false, img: "Images/site35.png" },
+    { t: "Save A Buck Electric", l: "http://preview.consumrbuzz.com/preview/f31934dc?t=1776116791746", cat: "Tier1", h: false, img: "Images/site36.png" },
+    { t: "BobKat Electric, LLC", l: "http://preview.consumrbuzz.com/preview/4a83eb1e?t=1775678728617", cat: "Tier1", h: false, img: "Images/site37.png" },
+    { t: "Rohde's Fencing", l: "http://preview.consumrbuzz.com/preview/81f420dc?t=1775597280846", cat: "Tier1", h: false, img: "Images/site38.png" },
+    { t: "Cold Hill Motocross", l: "http://preview.consumrbuzz.com/preview/4cd58a23?t=1775251196348", cat: "Tier1", h: false, img: "Images/site39.png" },
+    { t: "On Track Hvac, LLC", l: "http://preview.consumrbuzz.com/preview/53a6609d?t=1777410133022", cat: "Tier1", h: false, img: "Images/site40.png" },
+    { t: "One Stop Taxes", l: "http://preview.consumrbuzz.com/preview/b040217f?t=1774906628606", cat: "Tier1", h: false, img: "Images/site41.png" },
+    { t: "Prescott Window Cleaning", l: "http://preview.consumrbuzz.com/preview/10e6ccaf?t=1773864971552", cat: "Tier1", h: true, img: "Images/Prescott Window Cleaning.png" },
+    { t: "Dunnrite Notary Service", l: "http://preview.consumrbuzz.com/preview/8093353c?t=1773696819969", cat: "Tier1", h: false, img: "Images/site43.png" },
+    { t: "Texas Quality Road Service", l: "http://preview.consumrbuzz.com/preview/3d01e801?t=1773435019704", cat: "Tier1", h: false, img: "Images/site44.png" },
+    { t: "Gridiron Karate & Kung Fu", l: "https://preview.consumrbuzz.com/preview/3b574d02?t=1773320710774", cat: "Tier1", h: true, img: "Images/Gridiron Karate & Kung Fu.png"},
+    { t: "Glass Distributor & Window", l: "https://preview.consumrbuzz.com/preview/1d5a12e4?t=1773413669389", cat: "Tier1", h: true, img: "Images/Glass Distributor & Window.png"},
+    { t: "Roy's Lock & Door", l: "https://preview.consumrbuzz.com/preview/501cce81?t=1773175191161", cat: "Tier1", h: false, img: "Images/site47.png" },
+    { t: "Chips Tree and Landscape", l: "https://preview.consumrbuzz.com/preview/d8af9f23?t=1773173122724", cat: "Tier1", h: true, img: "Images/Chips Tree and Landscape.png"},
+    { t: "Concrete Works Best LLC", l: "https://preview.consumrbuzz.com/preview/60748a08?t=1772812885205", cat: "Tier1", h: true, img: "Images/Concrete Works Best LLC.png"},
+    { t: "Scoop-itz- Ice Cream Truck", l: "https://preview.consumrbuzz.com/preview/dd725078?t=1772817077558", cat: "Tier1", h: true, img: "Images/Scoop-itz- Ice Cream Truck.png"},
+    { t: "Double Eagle Rv Repair", l: "https://preview.consumrbuzz.com/preview/e8b94286?t=1772659508279", cat: "Tier1", h: false, img: "Images/site51.png" },
+    { t: "P.E. Automotive Colorsand", l: "https://preview.consumrbuzz.com/preview/f65da4e7?t=1771607283303", cat: "Tier1", h: true, img: "Images/P.E. Automotive Colorsand.png"},
+    { t: "Energy Concepts Inc", l: "http://preview.consumrbuzz.com/preview/f6189100?t=1777411608205", cat: "Tier1", h: false, img: "Images/site53.png" },
+    { t: "Aleruiz Painting", l: "https://preview.consumrbuzz.com/preview/b263de63?t=1770831446850", cat: "Tier1", h: false, img: "Images/site54.png" },
+    { t: "Luxury Limos LLC", l: "https://preview.consumrbuzz.com/preview/b47f539d?t=1770409100335", cat: "Tier1", h: false, img: "Images/site55.png" },
+    { t: "C.G. Williams Engineering", l: "https://preview.consumrbuzz.com/preview/f9480c75?t=1770067296178", cat: "Tier1", h: false, img: "Images/site56.png" },
+    { t: "Lake Boone Trail Office", l: "https://preview.consumrbuzz.com/preview/96894102?t=1769632453120", cat: "Tier1", h: false, img: "Images/site57.png" },
+    { t: "Wintergreen Hardware", l: "https://preview.consumrbuzz.com/preview/f79ff514?t=1769720880308", cat: "Tier1", h: false, img: "Images/site58.png" },
+    { t: "Got It Maid Cleaning", l: "https://preview.consumrbuzz.com/preview/0fd2657b?t=1769457773297", cat: "Tier1", h: true, img: "Images/Got It Maid Cleaning.png"},
+    { t: "NexGen Consultations LLC", l: "http://preview.consumrbuzz.com/preview/bc08b399?t=1777412027257", cat: "Tier1", h: false, img: "Images/site60.png" },
+    { t: "Cover Roofing Company", l: "https://preview.consumrbuzz.com/preview/50d425e5?t=1769090491170", cat: "Tier1", h: true, img: "Images/Cover Roofing Company.png"},
+    { t: "New Villa Construction", l: "https://preview.consumrbuzz.com/preview/f3a48077?t=1768603537781", cat: "Tier1", h: false, img: "Images/site62.png" },
+    { t: "A - 1 Refrigeration", l: "https://preview.consumrbuzz.com/preview/0fdcab91?t=1772125025808", cat: "Tier1", h: false, img: "Images/site63.png" },
+    { t: "Structure Floors", l: "https://preview.consumrbuzz.com/preview/934c3e14?t=1767368079993", cat: "Tier1", h: false, img: "Images/site64.png" },
+    { t: "Bailey & Sons Roofing", l: "https://preview.consumrbuzz.com/preview/a0af09fb?t=1767127606734", cat: "Tier1", h: false, img: "Images/site65.png" },
+    { t: "Life Counseling LLC", l: "http://preview.consumrbuzz.com/preview/aca4d3a8?t=1777412828473", cat: "Tier1", h: false, img: "Images/site66.png" },
+    { t: "Whaling City Flooring", l: "https://preview.consumrbuzz.com/preview/5db082ae?t=1765824033390", cat: "Tier1", h: false, img: "Images/site67.png" },
+    { t: "Fts Tree Service", l: "https://preview.consumrbuzz.com/preview/3a738f17?t=1765397479458", cat: "Tier1", h: false, img: "Images/site68.png" },
+    { t: "Tri City Tire", l: "https://preview.consumrbuzz.com/preview/c951ef50?t=1765302033101", cat: "Tier1", h: false, img: "Images/site69.png" },
+    { t: "Sport Show Specialists", l: "https://preview.consumrbuzz.com/preview/ef9fa5b3?t=1765386541509", cat: "Tier1", h: false, img: "Images/site70.png" },
+    { t: "Express Tires", l: "https://preview.consumrbuzz.com/preview/e6301dd7?t=1765388471735", cat: "Tier1", h: false, img: "Images/site71.png" },
+    { t: "Next Level Performance", l: "https://www.nextlevelperformancesystems.com/", cat: "Tier1", h: false, img: "Images/site72.png" },
+    { t: "Karina's Daycare", l: "https://preview.consumrbuzz.com/preview/fbb31b8e?t=1764698951345", cat: "Tier1", h: true, img: "Images/Karinas Daycare.png"},
+    { t: "JC Construction", l: "https://preview.consumrbuzz.com/preview/f385492c?t=1764626920790", cat: "Tier1", h: false, img: "Images/site74.png" },
+    { t: "A-1 Locksmith", l: "https://preview.consumrbuzz.com/preview/d1a682f8?t=1764872918911", cat: "Tier1", h: false, img: "Images/site75.png" },
+    { t: "Margo Beautiful Paintings", l: "https://preview.consumrbuzz.com/preview/d07de935?t=1764102472458", cat: "Tier1", h: false, img: "Images/site76.png" },
+    { t: "Victorious Home Health", l: "https://preview.consumrbuzz.com/preview/7da02d49?t=1763755568904", cat: "Tier1", h: false, img: "Images/site77.png" },
+    { t: "Murray's Dynamics LLC", l: "https://preview.consumrbuzz.com/preview/cfffcbd4?t=1763671941002", cat: "Tier1", h: false, img: "Images/site78.png" },
+    { t: "JayBon Junk Removal", l: "https://preview.consumrbuzz.com/preview/a32f1a3a?t=1763504062111", cat: "Tier1", h: false, img: "Images/site79.png" },
+    { t: "Junk Be Gone", l: "https://preview.consumrbuzz.com/preview/f1663a93?t=1763137180593", cat: "Tier1", h: true, img: "Images/Junk Be Gone.png"},
+    { t: "Information Beach", l: "https://preview.consumrbuzz.com/preview/aeb14f82?t=1762879330141", cat: "Tier1", h: false, img: "Images/site81.png" },
+    { t: "Thompson Insurance Agency", l: "https://preview.consumrbuzz.com/preview/3d9f6445?t=1762815134421", cat: "Tier1", h: false, img: "Images/site82.png" },
+    { t: "Boot's Star Dachshund's", l: "https://preview.consumrbuzz.com/preview/dab8b355?t=1762539560847", cat: "Tier1", h: true, img: "Images/Boots Star Dachshunds.png"},
+    { t: "Virginia Home Improvements", l: "https://preview.consumrbuzz.com/preview/0adf88bf?t=1762280325975", cat: "Tier1", h: false, img: "Images/site84.png" },
+    { t: "Coastline Concrete", l: "https://preview.consumrbuzz.com/preview/51d0825a?t=1762869047560", cat: "Tier1", h: false, img: "Images/site85.png" },
+    { t: "Altman Family Properties", l: "https://preview.consumrbuzz.com/preview/122f8f13?t=1761145403701", cat: "Tier1", h: true, img: "Images/Altman Family Properties.png"},
+    { t: "Hidalgo Farms", l: "https://preview.consumrbuzz.com/preview/7fb394c9?t=1760703026801", cat: "Tier1", h: true, img: "Images/Hidalgo Farms.png"},
+    { t: "Garners Electrical Service", l: "https://preview.consumrbuzz.com/preview/209ebeaf?t=1760454859746", cat: "Tier1", h: false, img: "Images/site88.png" },
+    { t: "Morrison's Farrier", l: "https://preview.consumrbuzz.com/preview/386571a4?t=1760046431169", cat: "Tier1", h: true, img: "Images/Morrisons Farrier.png"},
+    { t: "Specialized Service & Repair", l: "https://preview.consumrbuzz.com/preview/d0e7e1b4?t=1759952303154", cat: "Tier1", h: true, img: "Images/Specialized Service & Repair.png"},
+    { t: "Cab Plumbing Company", l: "https://preview.consumrbuzz.com/preview/674d632d?t=1758922818848", cat: "Tier1", h: false, img: "Images/site91.png" },
+    { t: "Baashad Construction", l: "https://preview.consumrbuzz.com/preview/23807a54?t=1758831785168", cat: "Tier1", h: true, img: "Images/Baashad Construction.png"},
+    { t: "Alpha Omega Trans", l: "https://preview.consumrbuzz.com/preview/5e37a973?t=1758318949175", cat: "Tier1", h: false, img: "Images/site93.png" },
+    { t: "TLC Lawns & Landscaping", l: "https://preview.consumrbuzz.com/preview/726496e7?t=1757603554017", cat: "Tier1", h: true, img: "Images/TLC Lawns & Landscaping.png"},
+    { t: "Performance Pressure Wash", l: "https://preview.consumrbuzz.com/preview/1d8082aa?t=1756933935658", cat: "Tier1", h: false, img: "Images/site95.png" },
+    { t: "M & M Tree Service", l: "https://preview.consumrbuzz.com/preview/05b4f5d8?t=1756212430240", cat: "Tier1", h: true, img: "Images/M & M Tree Service.png"},
+    { t: "Jerami Kennamer", l: "https://preview.consumrbuzz.com/preview/b21808cf?t=1755552582578", cat: "Tier1", h: false, img: "Images/site97.png" },
+    { t: "Best Bet Towing", l: "https://preview.consumrbuzz.com/preview/a8e23c8f?t=1755174955892", cat: "Tier1", h: false, img: "Images/site98.png" },
+    { t: "Salon Edera", l: "https://preview.consumrbuzz.com/preview/5ce4330f?t=1755006680010", cat: "Tier1", h: true, img: "Images/Salon Edera.png"},
+    { t: "Barbershop Salon V.I.P.", l: "https://preview.consumrbuzz.com/preview/20b9ab07?t=1753993215718", cat: "Tier1", h: false, img: "Images/site100.png" },
+    { t: "Chatham Welding Services", l: "https://preview.consumrbuzz.com/preview/f7c337e0?t=1753797824292", cat: "Tier1", h: false, img: "Images/site101.png" },
+    { t: "Vande Hey Associates LLC", l: "http://preview.consumrbuzz.com/preview/157d77f7?t=1777408414778", cat: "Tier2", h: false, img: "Images/site102.png" },
+    { t: "Deer Creek Turf LLC", l: "http://preview.consumrbuzz.com/preview/5f5b97ff?t=1775672899271", cat: "Tier2", h: false, img: "Images/site103.png" },
+    { t: "Brain Body Connection", l: "http://preview.consumrbuzz.com/preview/e4bb53a0?t=1777408514001", cat: "Tier2", h: true, img: "Images/Brain Body Connection.png"},
+    { t: "Chuck Reliable Roofing", l: "http://preview.consumrbuzz.com/preview/fd874421?t=1775570028236", cat: "Tier2", h: true, img: "Images/Chuck Reliable Roofing.png"},
+    { t: "Wilsonville Equestrian", l: "http://preview.consumrbuzz.com/preview/ca41e625?t=1775079415810", cat: "Tier2", h: false, img: "Images/site106.png" },
+    { t: "C & H Roofing", l: "http://preview.consumrbuzz.com/preview/e265ff49?t=1774470187002", cat: "Tier2", h: false, img: "Images/site107.png" },
+    { t: "Delgado's Wrecker Service", l: "http://preview.consumrbuzz.com/preview/cbaf6cac?t=1773696277035", cat: "Tier2", h: false, img: "Images/site108.png" },
+    { t: "Total Home Repair", l: "https://preview.consumrbuzz.com/preview/f19d68b7?t=1773944421022", cat: "Tier2", h: false, img: "Images/site109.png" },
+    { t: "RNR Contracting, Inc", l: "https://preview.consumrbuzz.com/preview/ebb4f1a7?t=1772138232926", cat: "Tier2", h: false, img: "Images/site110.png" },
+    { t: "Bluestar Janitorial", l: "https://preview.consumrbuzz.com/preview/77854b66?t=1771954289843", cat: "Tier2", h: false, img: "Images/site111.png" },
+    { t: "Shelly Dawn Images", l: "http://preview.consumrbuzz.com/preview/c924833f?t=1777411523737", cat: "Tier2", h: true, img: "Images/Shelly Dawn Images.png"},
+    { t: "Cavey's Custom Decks", l: "https://preview.consumrbuzz.com/preview/8bed16aa?t=1770669401408", cat: "Tier2", h: true, img: "Images/Caveys Custom Decks.png"},
+    { t: "Suz Salon", l: "https://preview.consumrbuzz.com/preview/4093a241?t=1768324949387", cat: "Tier2", h: true, img: "Images/Suz Salon.png"},
+    { t: "Wethington Landscape", l: "https://www.wethingtonlandscapemgmt.com/", cat: "Tier2", h: true, img: "Images/Wethington Landscape.png"},
+    { t: "Rashmi Jain, MD", l: "https://preview.consumrbuzz.com/preview/4d8fb956?t=1765923691316", cat: "Tier2", h: false, img: "Images/site116.png" },
+    { t: "Let's Do CPR", l: "https://consumrbuzz.wixstudio.com/lets-do-cpr", cat: "Tier2", h: true, img: "Images/Lets Do CPR.png" },
+    { t: "Mail Plus", l: "https://preview.consumrbuzz.com/preview/92588216?t=1760558540167", cat: "Tier2", h: true, img: "Images/Mail Plus.png" },
+    { t: "Adam Santos Electric", l: "https://preview.consumrbuzz.com/preview/f65ac217?t=1759779439236", cat: "Tier2", h: true, img: "Images/Adam Santos Electric.png"},
+    { t: "Williams Real Estate School", l: "https://preview.consumrbuzz.com/preview/8b9927c5?t=1757440361204", cat: "Tier2", h: true, img: "Images/Williams Real Estate School.png" },
+    { t: "Corey Beck Painting", l: "https://preview.consumrbuzz.com/preview/04bd0ba0?t=1756504595429", cat: "Tier2", h: true, img: "Images/Corey Beck Painting.png" },
+    { t: "The Luettgen Group", l: "http://preview.consumrbuzz.com/preview/b869347c?t=1777411357685", cat: "Tier3", h: true, img: "Images/The Luettgen Group.png"},
+    { t: "Four Willows Farm", l: "https://preview.consumrbuzz.com/preview/2921a272?t=1767967392411", cat: "Tier3", h: true, img: "Images/Four Willows Farm.png"},
+    { t: "Battery Power", l: "https://preview.consumrbuzz.com/preview/0065ed21?t=1761656447054", cat: "Tier3", h: true, img: "Images/Battery Power.png"}
+];
+
+document.addEventListener("DOMContentLoaded", () => {
+    initThree(); animBG(); initCursor();
+    
+    const words = ["YOUR VISION", "FUNCTIONAL LOGIC", "STRATEGIC FLOW", "DIGITAL SYSTEMS"];
+    let wordIdx = 0, charIdx = 0, isDeleting = false;
+    function type() { 
+        const textEl = document.getElementById('typing-text'); if(!textEl) return; 
+        const current = words[wordIdx]; 
+        textEl.innerText = isDeleting ? current.substring(0, charIdx--) : current.substring(0, charIdx++); 
+        let speed = isDeleting ? 40 : 120; 
+        if(!isDeleting && charIdx === current.length + 1) { isDeleting = true; speed = 2500; } 
+        else if(isDeleting && charIdx === 0) { isDeleting = false; wordIdx = (wordIdx + 1) % words.length; speed = 500; } 
+        setTimeout(type, speed); 
+    } 
+    type();
+
+    const featured = allProjects.filter(p => p.h); 
+    const chunk = Math.ceil(featured.length / 4);
+    const renderRow = (id, list) => { 
+        const el = document.getElementById(id); if(!el) return; 
+        [...list, ...list, ...list].forEach((p, i) => { 
+            el.innerHTML += `<a href="${p.l}" target="_blank" class="featured-card group block"><div class="overflow-hidden rounded-xl mb-4 bg-zinc-900 h-40"><img src="${p.img}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://picsum.photos/seed/${p.t.replace(/[^a-zA-Z0-9]/g, '')}/400/250'"></div><h4 class="text-lg font-bold uppercase text-white group-hover:text-pink-500 transition-colors">${p.t}</h4><p class="text-[9px] mt-2 uppercase text-zinc-600 font-black tracking-widest">★ View Masterpiece</p></a>`; 
+        }); 
+    };
+    renderRow('row-1-inner', featured.slice(0, chunk)); renderRow('row-2-inner', featured.slice(chunk, chunk * 2)); renderRow('row-3-inner', featured.slice(chunk * 2, chunk * 3)); renderRow('row-4-inner', featured.slice(chunk * 3));
+
+    window.renderVault = (cat) => {
+        const list = document.getElementById('vault-list'); if(!list) return; list.innerHTML = ''; 
+        document.querySelectorAll('.vault-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-cat') === cat));
+        let filtered = cat === 'featured' ? allProjects.filter(p => p.h) : allProjects.filter(p => p.cat.toLowerCase() === cat.toLowerCase() || cat === 'all');
+        document.getElementById('vault-count').innerText = `SHOWING ${filtered.length} MASTERPIECES`;
+        filtered.forEach((p, i) => { 
+            const row = document.createElement('a'); row.href = p.l; row.target = "_blank"; row.className = "archive-row group"; 
+            const num = (i + 1).toString().padStart(2, '0');
+            row.innerHTML = `
+            <div class="text-[10px] text-zinc-600 font-black group-hover:text-pink-500 transition-colors">${num}</div>
+            <div class="text-[8px] font-bold text-zinc-700 uppercase">${p.cat}</div>
+            <div class="text-sm font-bold uppercase text-zinc-300 group-hover:text-white transition-all">${p.h ? '<span class="text-pink-500 mr-2 font-black">★</span>' : ''}${p.t}</div>
+            <div class="text-right flex items-center justify-end"><div class="w-1.5 h-1.5 rounded-full bg-zinc-800 group-hover:bg-pink-500 transition-all"></div></div>`; 
+            list.appendChild(row); 
+        });
+    };
+    renderVault('single');
+
+    const ctx = document.getElementById('skillRadar')?.getContext('2d');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'radar',
+            data: { labels: ['UX DESIGN', 'BUILD LOGIC', 'STRATEGIC SEO', 'MOBILE FLOW', 'INTERFACE'], datasets: [{ data: [98, 95, 100, 99, 94], backgroundColor: 'rgba(255, 0, 255, 0.08)', borderColor: '#ff00ff', borderWidth: 2, pointRadius: 5, pointBackgroundColor: '#fff' }] },
+            options: { maintainAspectRatio: false, layout: { padding: 45 }, scales: { r: { grid: { color: 'rgba(255,255,255,0.08)' }, angleLines: { color: 'rgba(255,255,255,0.08)' }, pointLabels: { color: '#888', font: { size: 11, weight: 'bold' } }, ticks: { display: false }, suggestedMin: 40, suggestedMax: 105 } }, plugins: { legend: { display: false } } }
+        });
+    }
+
+    document.querySelectorAll('section > div:not(.marquee-section-container)').forEach(el => el.classList.add('fade-up'));
+    const obs = new IntersectionObserver(es => es.forEach(e => { 
+        if(e.isIntersecting) { 
+            e.target.classList.add('visible'); 
+            if(e.target.classList.contains('count-up')) { 
+                let target = +e.target.dataset.target, c = 0; 
+                const u = () => { c += target/60; if(c < target) { e.target.innerText = Math.ceil(c); requestAnimationFrame(u); } else e.target.innerText = target; }; 
+                u(); 
+            } 
+        } 
+    }), { threshold: 0.1 });
+    document.querySelectorAll('.count-up, .industry-node, .tool-node, .capability-anim, .fade-up').forEach(el => obs.observe(el));
+});
+</script>
+</body>
+</html>
